@@ -1,0 +1,273 @@
+
+
+
+
+directions = [North, East, South, West]
+
+a = 1000000 #quantity of hay
+b = 1000000 #quantity of wood
+c = 1000000 #quantity of carrots
+d = 1000000 #quantity of pumpkins
+e = 100000 #quantity of gold
+f = 100000 #quantity of power
+
+
+
+MAIN
+
+main_loop()
+
+
+
+MAIN_LOOP
+
+def main_loop():
+	while True:
+		all_conditions_met = True
+		
+		if num_items(Items.Power) < (f):
+			clear()
+			get_power()
+			all_conditions_met = False
+			
+		if num_items(Items.Hay) < (a):
+			clear()
+			plant_hay()
+			all_conditions_met = False
+			
+		if num_items(Items.Wood) < (b):
+			clear()
+			plant_trees()
+			all_conditions_met = False
+			
+		if num_items(Items.Carrot) < (c):
+			clear()
+			plant_carrots()
+			all_conditions_met = False
+			
+		if num_items(Items.Pumpkin) < (d):
+			clear()
+			plant_pumpkins()
+			all_conditions_met = False
+			
+		if num_items(Items.Gold) < (e):
+			clear()
+			run_maze()
+			all_conditions_met = False
+			
+		if all_conditions_met:
+			clear()
+			break
+			
+	go_to(0,0)
+	print("Got all you wanted!!!")
+
+
+
+TILL
+
+def till_grid():
+	for i in range(get_world_size()):
+		for i in range(get_world_size()):
+			if get_ground_type() != (Grounds.Soil):
+				till()
+				move(North)
+			else:
+				move(North)	
+		move(East)
+
+
+WATER_GROUND
+
+def water_ground():
+	if get_water() < (0.8):
+		use_item(Items.Water_Tank)
+
+
+GO_TO
+
+def go_to(target_x, target_y):
+	while get_pos_x() != target_x:
+		if get_pos_x() < target_x:
+			move(East)
+		else:
+			move(West)
+			
+	while get_pos_y() != target_y:
+		if get_pos_y() < target_y:
+			move(North)
+		else:
+			move(South)
+
+
+
+PLANT_HAY
+
+def plant_hay():
+	while num_items(Items.Hay) < (a):
+		for i in range(get_world_size()):
+			if get_ground_type()!=(Grounds.Turf):
+						till()
+			if can_harvest():
+				harvest()
+			move(North)
+		move(East)
+
+
+PLANT_TREES
+
+def plant_trees():
+	while num_items(Items.Wood) < (b):
+		for i in range(get_world_size()):
+			if ((get_pos_x() + get_pos_y()) % 2) == 0:
+				if can_harvest():
+					harvest()
+					water_ground()
+					plant(Entities.Tree)
+					move(North)
+				else:
+					move(North)
+			else:
+				if can_harvest():
+					harvest()
+					plant(Entities.Bush)
+				move(North)
+		move(East)
+	
+
+PLANT_CARROTS
+
+def plant_carrots():
+	while num_items(Items.Carrot) < (c):
+		if num_items(Items.Carrot_Seed) < 1000:
+			trade(Items.Carrot_Seed, 5000)
+		for i in range(get_world_size()):
+			if can_harvest():
+				harvest()
+				water_ground()
+			if get_ground_type()!=(Grounds.Soil):
+				till()
+			plant(Entities.Carrots)
+			move(North)
+		move(East)
+
+
+PLANT_PUMPKINS
+
+def plant_pumpkins():
+    pumpkin_coords = []  # List to store coordinates that need replanting
+
+    while num_items(Items.Pumpkin) < d:
+        if num_items(Items.Pumpkin_Seed) < 1000:
+			trade(Items.Pumpkin_Seed, 5000)
+        
+        # Plant pumpkins throughout the whole grid
+        go_to(0, 0)
+        for x in range(get_world_size()):
+            for y in range(get_world_size()):
+                go_to(x, y)
+                if get_entity_type() != Entities.Pumpkin:
+                    harvest()
+                if get_ground_type() != Grounds.Soil:
+                    till()
+                plant(Entities.Pumpkin)
+                water_ground()
+        
+        # Return to (0,0)
+        go_to(0, 0)
+
+        # Check each position and save coordinates that need replanting
+        for x in range(get_world_size()):
+            for y in range(get_world_size()):
+                go_to(x, y)
+                if get_entity_type() != Entities.Pumpkin:
+                    plant(Entities.Pumpkin)
+                    water_ground()
+                    pumpkin_coords.append((x, y))
+        
+        # Return to (0,0)
+        go_to(0, 0)
+
+        # Process saved coordinates
+        while pumpkin_coords:
+            x, y = pumpkin_coords.pop(0)
+            go_to(x, y)
+            if get_entity_type() != Entities.Pumpkin:
+                plant(Entities.Pumpkin)
+                water_ground()
+                pumpkin_coords.append((x, y))  # Re-add to the list if not successfully planted
+        
+        # Harvest all pumpkins
+        go_to(0, 0)
+		harvest()
+
+
+GET_POWER
+
+
+def plant_sunflowers():
+	go_to(0,0)
+	for x in range(get_world_size()):
+		for y in range(get_world_size()):
+			go_to(x, y)
+			if get_ground_type() != (Grounds.Soil):
+				till()
+			if num_items(Items.Sunflower_Seed) < 100:
+				trade(Items.Sunflower_Seed, 300)
+			plant(Entities.Sunflower)
+			water_ground()
+
+
+def measure_sunflowers():
+	measurements = []
+	for x in range(get_world_size()):
+		for y in range(get_world_size()):
+			go_to(x, y)
+			value = measure()
+			measurements.append((value, x, y))
+	return measurements
+
+def sort_measurements(measurements):
+    n = len(measurements)
+    for i in range(n):
+        max_idx = i
+        for j in range(i + 1, n):
+            if measurements[j][0] > measurements[max_idx][0]:
+                max_idx = j
+        # Swap the found maximum element with the first element
+        measurements[i], measurements[max_idx] = measurements[max_idx], measurements[i]
+    return measurements
+	
+	
+def visit_locations_in_order(sorted_measurements):
+    for measurement in sorted_measurements:
+        value, x, y = measurement
+        go_to(x, y)
+        harvest()
+        
+        
+def get_power():
+	while num_items(Items.Power) < (f):
+		if num_items(Items.Sunflower_Seed) < 1000:
+			trade(Items.Sunflower_Seed, 5000)
+		plant_sunflowers()
+		measurements = measure_sunflowers()
+		sorted_measurements = sort_measurements(measurements)
+		visit_locations_in_order(sorted_measurements)
+	
+get_power()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
